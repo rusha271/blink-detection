@@ -1,0 +1,168 @@
+<div class="blink-detector-container">
+  <div *ngIf="isLoading" class="loading-state">
+    <div class="spinner"></div>
+    <p>Loading face detection models...</p>
+  </div>
+
+  <div *ngIf="error" class="error-state">
+    <p class="error-icon">⚠️</p>
+    <p class="error-message">{{ error }}</p>
+    <button class="retry-button" (click)="retry()">Try Again</button>
+  </div>
+
+  <div *ngIf="!isLoading && !error" class="detection-area">
+    <video
+      #videoElement
+      autoplay
+      playsinline
+      muted
+      class="video-element"
+    ></video>
+
+    <canvas #canvasElement class="canvas-overlay"></canvas>
+
+    <div class="status-overlay">
+      <div class="calibration-status" *ngIf="isCalibrating">
+        <p>Please hold still while we scan your face</p>
+      </div>
+
+      <div class="brightness-feedback" *ngIf="distanceMessage && !isCalibrating">
+        <p>{{ distanceMessage }}</p>
+      </div>
+
+      <div class="stage-info" *ngIf="detectionActive">
+        <p class="stage-label">Stage: {{ detectionState.stage }}</p>
+        <p class="time-remaining" *ngIf="timeRemaining > 0">
+          Time remaining: {{ timeRemaining }}s
+        </p>
+      </div>
+
+      <div
+        class="movement-instruction"
+        *ngIf="
+          detectionState.stage === 'headMovement' ||
+          detectionState.stage === 'blinking' ||
+          detectionState.stage === 'waiting'
+        "
+      >
+        <p>{{ movementInstruction }}</p>
+        <p
+          class="completed-movements"
+          *ngIf="detectionState.completedMovements.length > 0"
+        >
+          Completed: {{ detectionState.completedMovements.join(', ') }}
+        </p>
+      </div>
+
+      <div class="controls" *ngIf="!detectionActive && !isCalibrating && showStartButton">
+        <button
+          class="start-button"
+          (click)="startDetection()"
+          [disabled]="maxAttemptsReached"
+        >
+          Start Liveness Detection
+        </button>
+      </div>
+
+      <div class="results" *ngIf="detectionActive">
+        <p class="time">Time: {{ currentTime$ | async | number:'1.0-0' }}s</p>
+        <p
+          class="blink-count"
+          *ngIf="detectionState.stage === 'blinking'"
+        >
+          Blinks: {{ detectionState.blinkCount }}
+        </p>
+      </div>
+    </div>
+
+    <div class="final-results" *ngIf="finalResult">
+      <pre style="text-align: left; white-space: pre-wrap;">{{ finalResult }}</pre>
+      <button
+        class="retry-button"
+        *ngIf="showRetryButton && !maxAttemptsReached"
+        (click)="retry()"
+      >
+        Try Again
+      </button>
+      <button
+        class="go-ahead-button"
+        *ngIf="showGoAheadButton"
+        (click)="goAhead()"
+      >
+        Go Ahead
+      </button>
+    </div>
+  </div>
+
+  <div class="captured-images" *ngIf="capturedImages.length > 0">
+    <h3>Captured Images</h3>
+    <div class="images-grid">
+      <div class="image-card" *ngFor="let image of capturedImages">
+        <img
+          [src]="image.base64"
+          [alt]="'Capture - ' + image.event"
+          (click调解器)="viewCapturedImage(image.id)"
+        />
+        <div class="image-info">
+          <p class="event-type">Event: {{ image.event }}</p>
+          <p class="movement-type" *ngIf="image.movement">
+            Movement: {{ image.movement }}
+          </p>
+          <p class="timestamp">
+            Time: {{ image.timestamp | date:'medium' }}
+          </p>
+          <p
+            class="match-percentage"
+            *ngIf="image.matchPercentage"
+          >
+            Match Percentage:
+            {{ image.matchPercentage | number:'1.2-2' }}%
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div
+    class="image-preview"
+    *ngIf="selectedImage"
+    (click)="selectedImage = null"
+  >
+    <div
+      class="preview-content"
+      (click)="$event.stopPropagation()"
+    >
+      <img
+        [src]="selectedImage.base64"
+        [alt]="'Preview - ' + selectedImage.event"
+      />
+      <div class="preview-info">
+        <p class="preview-event">
+          Event: {{ selectedImage.event }}
+        </p>
+        <p
+          class="preview-movement"
+          *ngIf="selectedImage.movement"
+        >
+          Movement: {{ selectedImage.movement }}
+        </p>
+        <p class="preview-time">
+          Time: {{ selectedImage.timestamp | date:'medium' }}
+        </p>
+        <p
+          class="preview-match"
+          *ngIf="selectedImage.matchPercentage"
+        >
+          Match Percentage:
+          {{ selectedImage.matchPercentage | number:'1.2-2' }}%
+        </p>
+        <button
+          class="preview-close"
+          (click)="selectedImage = null"
+        >
+          Close Preview
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

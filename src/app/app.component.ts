@@ -1,12 +1,10 @@
 import { Component } from '@angular/core';
-import { RouterOutlet } from '@angular/router';
+import { BlinkDetectorComponent } from './blink-detector/blink-detector.component';
 
 @Component({
   selector: 'app-root',
-  imports: [RouterOutlet],
-  templateUrl: './app.component.html',
-  styleUrl: './app.component.css'
+  template: '<app-blink-detector></app-blink-detector>',
+  standalone: true,
+  imports: [BlinkDetectorComponent]
 })
-export class AppComponent {
-  title = 'blink-detection';
-}
+export class AppComponent {}
